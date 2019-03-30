@@ -1,0 +1,7 @@
+int a
+float b { if a>10 then a=11 else a=20
+cout>>a
+a=10
+for a = 1 to 20 do a=20
+end
+}

@@ -1,0 +1,14 @@
+int a
+float b 
+int c { if a>10 then a=11 else a=20
+cout>>a
+cin<<a
+for a = 1 to 20 do a=20
+c=12
+a=c
+cout>>c
+for c = -3 to 100 do cout>>c
+a=c>50 ? (c-1):c^2
+end
+end
+}
