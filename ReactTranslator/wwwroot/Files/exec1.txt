@@ -1,0 +1,9 @@
+int a,b,c{
+a=10
+b=20
+if a<b then c = b+a else c = b*a
+cout>>c
+for a=1 to b do cout>>a>>b
+b=b-5
+end
+}

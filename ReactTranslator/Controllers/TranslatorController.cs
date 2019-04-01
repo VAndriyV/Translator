@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Hosting;
 using Domain.Util;
 using TranslatorLogic.ReversePolishNotation;
 using TranslatorLogic.LexicalAnalyzer;
+using Newtonsoft.Json;
 
 namespace ReactTranslator.Controllers
 {
@@ -45,6 +46,8 @@ namespace ReactTranslator.Controllers
 
         private readonly IRPNBuilder _RPNBuilder;
 
+        private readonly IExecutor _executor;
+
         private const string FULL_GRAMMAR_TEXT_FILE = "GrammarConfiguration.txt";
 
         private const string EXPRESSION_FULL_GRAMMAR_TEXT_FILE = "ExpressionGrammar.txt";
@@ -60,7 +63,7 @@ namespace ReactTranslator.Controllers
             , IAscendingAnalyzer ascendingAnalyzer
             ,IRPNExpressionBuilder RPNExpressionBuilder
             ,IRPNExpressionCalculator RNPExpressionCalculator
-            ,IRPNBuilder RPNBuilder)
+            ,IRPNBuilder RPNBuilder, IExecutor executor)
         {
             _lexicalAnalyzer = lexicalAnalyzer;
             _recursiveAnalyzer = recursiveAnalyzer;
@@ -73,6 +76,7 @@ namespace ReactTranslator.Controllers
             _RPNExpressionBuilder = RPNExpressionBuilder;
             _RPNExpressionCalculator = RNPExpressionCalculator;
             _RPNBuilder = RPNBuilder;
+            _executor = executor;
         }       
 
         [HttpGet("Index")]
@@ -385,6 +389,106 @@ namespace ReactTranslator.Controllers
 
                 return StatusCode(400, exInfo);
             }
+        }
+
+        [HttpPost("Execute")]
+        public async Task<IActionResult> Execute([FromBody] string sourceCode)
+        {
+            try
+            {
+                var laResult = await LexicalAnalyze(sourceCode);
+
+                var outputLexemes = AutoMapperListConventer
+                    .MapList<OutputLexemeViewModel, OutputLexeme>(laResult.OutputLexemes);
+
+                var outputIdns = AutoMapperListConventer
+                    .MapList<OutputIdnViewModel, OutputIdn>(laResult.OutputIdns);
+
+                _recursiveAnalyzer.DoAnalyze(outputLexemes);
+
+                _RPNBuilder.BuildRPN(outputLexemes);
+
+                var RPN = _RPNBuilder.GetRPN();
+
+                string singleLineRPN = string.Join(" ",RPN);             
+
+                var marks = _RPNBuilder.GetUsedMarks();
+                var mappedMarks = marks.ToDictionary(a => a, a => RPN.IndexOf(a + ":"));
+                var additionalCells = _RPNBuilder.GetAdditionalCells();
+                var mappedAdditionalCells = additionalCells.ToDictionary(a => a,a=>12345678L);
+
+                var executionResult = string.Empty;
+                try
+                {
+                    executionResult = _executor.Execute(mappedMarks, RPN, outputIdns, mappedAdditionalCells);
+                }
+                catch(VariablesInitializeException ex)
+                {
+                   /* HttpContext.Response.Cookies.Append("marks", JsonConvert.SerializeObject(mappedMarks));
+                    HttpContext.Response.Cookies.Append("RPN", JsonConvert.SerializeObject(RPN));
+                    HttpContext.Response.Cookies.Append("outputIdns", JsonConvert.SerializeObject(outputIdns));
+                    HttpContext.Response.Cookies.Append("additionalCells"
+                        , JsonConvert.SerializeObject(mappedAdditionalCells));*/
+                    HttpContext.Response.Cookies.Append("idx", _executor.GetLastIdx().ToString());                  
+                    return new ObjectResult(ex.Variables);
+                }
+
+                var result = new ExecutorResult
+                {
+                    ExecutionResult = executionResult,
+                    ResultTable = _executor.GetResultTable()
+                };
+
+                return new ObjectResult(result);
+
+            }
+            catch (LexicalAnalyzeException laEx)
+            {
+                var exInfo = new ErrorDetails
+                {
+                    Message = laEx.Message
+                        ,
+                    AnalyzeErrors = laEx.AnalyzeErrors
+                };
+
+                return StatusCode(400, exInfo);
+            }
+            catch (SyntaxAnalyzeException saEx)
+            {
+                var exInfo = new ErrorDetails
+                {
+                    Message = saEx.Message
+                        ,
+                    AnalyzeErrors = saEx.AnalyzeErrors
+                };
+
+                return StatusCode(400, exInfo);
+            }            
+        }
+
+        [HttpPost("ContinueExecution")]
+        public async Task<IActionResult> ContinueExecution([FromBody] Dictionary<string,long> values)
+        {
+            var idx = int.Parse(HttpContext.Request.Cookies["idx"]);
+            string executionResult = string.Empty;
+
+            try
+            {
+                executionResult = _executor.ContinueExecution(values, idx);
+            }
+            catch(VariablesInitializeException ex)
+            {
+                HttpContext.Response.Cookies.Append("idx", _executor.GetLastIdx().ToString());
+                return new ObjectResult(ex.Variables);
+            }
+
+            var result = new ExecutorResult
+            {
+                ExecutionResult = executionResult,
+                ResultTable = _executor.GetResultTable()
+            };
+
+            return new ObjectResult(result);
         }
 
         [HttpGet("FullGrammar")]

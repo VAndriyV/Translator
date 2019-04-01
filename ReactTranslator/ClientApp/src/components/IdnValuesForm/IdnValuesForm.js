@@ -9,11 +9,19 @@ export default class IdnValuesForm extends Component{
 
     mapIdnsList = (idns) => {       
 
-        return idns.map((i) => {
-            return (<React.Fragment>
-                <label>{i.name} </label>
-                <input type='number' name={i.name} pattern="\d*" className="form-control idn-input" required />                   
-            </React.Fragment>);
+        return idns.map((i) => {           
+            if (i.hasOwnProperty('name')) {
+                return (<React.Fragment>
+                    <label>{i.name} </label>
+                    <input type='number' name={i.name} pattern="\d*" className="form-control idn-input" required />
+                </React.Fragment>);
+            }
+            else {
+                return (<React.Fragment>
+                    <label>{i} </label>
+                    <input type='number' name={i} pattern="\d*" className="form-control idn-input" required />
+                </React.Fragment>);
+            }
             
         });
     };

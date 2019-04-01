@@ -54,6 +54,11 @@ export class NavMenu extends Component {
                                 <Glyphicon glyph="retweet" /> Reverse Polish notation
               </NavItem>
                         </LinkContainer>
+                        <LinkContainer to={"/executeProgram"} exact>
+                            <NavItem>
+                                <Glyphicon glyph="cd" /> Execute program
+              </NavItem>
+                        </LinkContainer>
                     </Nav>
                 </Navbar.Collapse>
             </Navbar>

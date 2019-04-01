@@ -10,6 +10,8 @@ import AscendingAnalyzerPage from '../AscendingAnalyzerPage/AscendingAnalyzerPag
 import GrammarAndRelations from '../GrammarAndRelations/GrammarAndRelations';
 import PRNExpressionPage from '../PRNExpressionPage/PRNExpressionPage';
 import RPNBuilderPage from '../RPNBuilderPage/RPNBuilderPage';
+import ExecutorPage from '../ExecutorPage/ExecutorPage';
+
 export default class App extends Component {
     displayName = App.name;
 
@@ -45,7 +47,8 @@ export default class App extends Component {
                 <Route path="/ascendingAnalyzer" component={AscendingAnalyzerPage} />
                 <Route path="/grammarAndRelation/:type" component={GrammarAndRelations} />
                 <Route path="/rpnExpression" component={PRNExpressionPage} />
-                <Route path="/rpnBuilder" component={RPNBuilderPage}/>
+                <Route path="/rpnBuilder" component={RPNBuilderPage} />
+                <Route path="/executeProgram" component={ExecutorPage} />
             </Layout>
         );
     }

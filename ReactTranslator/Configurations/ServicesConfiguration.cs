@@ -48,7 +48,7 @@ namespace ReactTranslator.Configurations
                 .AddSingleton<IRPNExpressionBuilder, RPNExpressionBuilder>()
                 .AddTransient<IRPNExpressionCalculator, RPNExpressionCalculator>()
                 .AddTransient<IRPNBuilder, RPNBuilder>()
-                .AddTransient<IExecutor,Executor>();
+                .AddSingleton<IExecutor,Executor>();
                
 
             return services;

@@ -403,8 +403,7 @@ namespace TranslatorLogic.ReversePolishNotation
                                 _RPN.Add("-");
                                 _RPN.Add("0");
                                 _RPN.Add("<=");
-                                _RPN.Add(_displayableMarks.Last());
-                                _RPN.Add("CF");
+                                _RPN.Add(_displayableMarks.Last()+ "CF");                               
                                 break;
 
                             }
@@ -429,8 +428,7 @@ namespace TranslatorLogic.ReversePolishNotation
                             var stackHead = _stack.Peek();
                             if (stackHead.Contains("for"))
                             {
-                                _RPN.Add(_displayableMarks[_displayableMarks.Count - 2]);
-                                _RPN.Add("NC");
+                                _RPN.Add(_displayableMarks[_displayableMarks.Count - 2]+"NC");                                
                                 _RPN.Add(_displayableMarks.Last() + ":");
                                 _stack.Pop();
                                 _displayableMarks.Remove(_displayableMarks.Last());
@@ -509,6 +507,16 @@ namespace TranslatorLogic.ReversePolishNotation
         public RPNBuilderTable GetResultTable()
         {
             return _resultTable;
+        }
+
+        public List<string> GetUsedMarks()
+        {
+            return _marks;
+        }
+
+        public List<string> GetAdditionalCells()
+        {
+            return _additionalCells;
         }
     }
 }

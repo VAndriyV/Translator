@@ -1,0 +1,6 @@
+int a,b,c{
+a=10
+b=20
+if a>b then c = b+a else c = b*a
+cout>>c
+}

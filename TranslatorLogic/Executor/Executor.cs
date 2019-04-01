@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using Domain.Translator;
+using Domain.Exceptions;
+using Domain.ViewModels;
 
 namespace TranslatorLogic.Executor
 {
@@ -31,6 +33,10 @@ namespace TranslatorLogic.Executor
 
         private string[] _logicalOperations= {"<", ">", "<=", ">=", "==", "!="};
 
+        private HashSet<string> _variablesToInit;
+
+        private ExecutorTable _resultTable;
+
         public Executor()
         {
             _IDNs = new List<OutputIdn>();
@@ -41,6 +47,8 @@ namespace TranslatorLogic.Executor
             _RPN = new List<string>();
             _marks = new Dictionary<string, int>();
             _result = string.Empty;
+            _variablesToInit = new HashSet<string>();
+            _resultTable = new ExecutorTable();
             _idx = 0;            
         }
 
@@ -53,73 +61,125 @@ namespace TranslatorLogic.Executor
             _IDNs = IDNs;
             _marks = marks;
             _additionalCells = additinalCells;
+            _integerIDNs = new Dictionary<string, int>();
+            _floatIDNs = new Dictionary<string, long>();
+            _variablesToInit = new HashSet<string>();
+            _resultTable = new ExecutorTable();
+            ProceedExecution();
+            return _result;
+        }
 
-            while (_idx<_RPN.Count)
+        public string ContinueExecution(Dictionary<string,long> values,int idx)
+        {
+            foreach(var kv in values)
+            {
+                if (_integerIDNs.ContainsKey(kv.Key))
+                {
+                    _integerIDNs[kv.Key] =(int)kv.Value;
+                }
+                else if (_floatIDNs.ContainsKey(kv.Key))
+                {
+                    _floatIDNs[kv.Key]=kv.Value;
+                }
+            }
+            _idx = idx;
+            ProceedExecution();
+            return _result;
+        }
+
+        private void ProceedExecution()
+        {
+            _resultTable.Stack.Add(new List<string>(_stack.Reverse()));
+            _resultTable.RPN.Add(_RPN.GetRange(_idx, (_RPN.Count - _idx)));
+            while (_idx < _RPN.Count)
             {
                 var idn = _IDNs.Find(a => a.Name == _RPN[_idx]);
                 if (idn != null)
                 {
+                    _resultTable.Description.Add("Ідент. в стек");
                     _stack.Push(idn.Name);
-                   _idx++;
+                    _idx++;
                 }
                 else if (_additionalCells.ContainsKey(_RPN[_idx]))
                 {
+                    _resultTable.Description.Add("Додат. ком. в стек");
                     _stack.Push(_RPN[_idx]);
                     _idx++;
                 }
                 else if (long.TryParse(_RPN[_idx], out long constant))
                 {
+                    _resultTable.Description.Add("Конст. в стек");
                     _stack.Push(_RPN[_idx]);
-                   _idx++;
+                    _idx++;
                 }
                 else if (_RPN[_idx] == "IVD")
                 {
+                    _resultTable.Description.Add("Ог. типу int");
                     IntegerDeclaration();
                     _idx++;
                 }
                 else if (_RPN[_idx] == "FVD")
                 {
+                    _resultTable.Description.Add("Ог. типу float");
                     FloatDeclaration();
                     _idx++;
                 }
                 else if (_arithmeticOperations.Contains(_RPN[_idx]))
                 {
+                    _resultTable.Description.Add("Викон. арифм. опер." + _RPN[_idx]);
                     ProceedArithmeticOperation(_RPN[_idx]);
                     _idx++;
                 }
                 else if (_logicalOperations.Contains(_RPN[_idx]))
                 {
+                    _resultTable.Description.Add("Викон. опер. відн." + _RPN[_idx]);
                     ProceedRelation(_RPN[_idx]);
                     _idx++;
                 }
                 else if (_RPN[_idx] == "=")
                 {
+                    _resultTable.Description.Add("Присвоєння значення");
                     var valueOrIdn = _stack.Pop();
                     var variable = _stack.Pop();
                     var value = GetIdnValue(valueOrIdn);
                     SetIdnValue(variable, value);
                     _idx++;
-                }  
+                }
                 else if (_RPN[_idx] == "OUT")
                 {
+                    _resultTable.Description.Add("Виведення");
                     Output();
                     _idx++;
                 }
-                else if (_RPN[_idx] == "IN")
+                else if (_RPN[_idx] == "READ")
                 {
+                    _resultTable.Description.Add("Зчитування");
                     Input();
                     _idx++;
+                    var tempList = new HashSet<string>(_variablesToInit);
+                    _variablesToInit.Clear();
+                    throw new VariablesInitializeException(tempList);
                 }
                 else if (_RPN[_idx].Contains("CF"))
                 {
+                    _resultTable.Description.Add("Обробка ум.пер. за хибн.");
                     Conditional(_RPN[_idx]);
                 }
                 else if (_RPN[_idx].Contains("NC"))
                 {
+                    _resultTable.Description.Add("Обробка без ум. пер.");
                     NoConditional(_RPN[_idx]);
                 }
+                else if (_marks.ContainsKey(_RPN[_idx].Remove(_RPN[_idx].Length - 1)))
+                {
+                    _resultTable.Description.Add("Пропуск огол. мітки");
+                    _idx++;
+                }
+
+                _resultTable.Stack.Add(new List<string>(_stack.Reverse()));
+                _resultTable.RPN.Add(_RPN.GetRange(_idx, (_RPN.Count - _idx)));
             }
-            return _result;
+            _resultTable.Description.Add("Кінець");
         }
 
         private void Output()
@@ -141,14 +201,10 @@ namespace TranslatorLogic.Executor
         {
             while (_stack.TryPop(out string idn))
             {
-                if (_integerIDNs.ContainsKey(idn))
+                if (_integerIDNs.ContainsKey(idn) || _floatIDNs.ContainsKey(idn))
                 {
-                  //  _result += _integerIDNs[idn] + " ;";
-                }
-                else if (_floatIDNs.ContainsKey(idn))
-                {
-                   // _result += _floatIDNs[idn] + " ;";
-                }
+                    _variablesToInit.Add(idn);
+                }                
             }
         }
 
@@ -177,6 +233,10 @@ namespace TranslatorLogic.Executor
             {
                 _idx = GetMarkValue(command);
             }
+            else
+            {
+                _idx=_idx+1;
+            }
         }
 
         private void NoConditional(string command)
@@ -186,7 +246,15 @@ namespace TranslatorLogic.Executor
 
         private int GetMarkValue(string command)
         {
-            var mark = command.Substring(0, command.IndexOf("CF"));
+            var mark = string.Empty;
+            if (command.Contains("CF"))
+            {
+                mark = command.Substring(0, command.IndexOf("CF"));
+            }
+            else if (command.Contains("NC"))
+            {
+                mark = command.Substring(0, command.IndexOf("NC"));
+            }            
             var markValue = _marks[mark];
             return markValue;
         }
@@ -275,43 +343,43 @@ namespace TranslatorLogic.Executor
         private long Power()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return (long)Math.Pow(val1, val2);
+            return (long)Math.Pow(val2, val1);
         }
 
         private bool More()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return val1 > val2;
+            return val2 > val1;
         }
 
         private bool MoreOrEqual()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return val1 >= val2;
+            return val2 >= val1;
         }
 
         private bool Less()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return val1 < val2;
+            return val2 < val1;
         }
 
         private bool LessOrEqual()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return val1 <= val2;
+            return val2 <= val1;
         }
 
         private bool Equal()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return val1 == val2;
+            return val2 == val1;
         }
 
         private bool NotEqual()
         {
             ExtractValuesForBinaryOperation(out long val1, out long val2);
-            return val1 != val2;
+            return val2 != val1;
         }
 
         private void ExtractValuesForBinaryOperation(out long val1,out long val2 )
@@ -389,6 +457,16 @@ namespace TranslatorLogic.Executor
             {
                 _additionalCells[idn] = value;
             }
+        }
+
+        public int GetLastIdx()
+        {
+            return _idx;
+        }
+
+        public ExecutorTable GetResultTable()
+        {
+            return _resultTable;
         }
     }
 }

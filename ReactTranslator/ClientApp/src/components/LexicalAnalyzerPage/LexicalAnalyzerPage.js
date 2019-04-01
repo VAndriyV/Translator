@@ -18,7 +18,7 @@ export default class LexicalAnalyzerPage extends Component {
     analyzeType = "Lexical analyze";   
 
     doLexicalAnalyze = (sourceCode) => {
-        var result = this.translatorService.getLexicalAnalyzeResult(sourceCode);
+        const result = this.translatorService.getLexicalAnalyzeResult(sourceCode);
         result.then((r) => {
             console.log(r);
             this.setState({

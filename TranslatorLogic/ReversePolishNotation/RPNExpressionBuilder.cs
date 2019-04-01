@@ -77,16 +77,18 @@ namespace TranslatorLogic.ReversePolishNotation
 
             _stack = new Stack<RPNExpressionToken>();
             _stack.Push(new RPNExpressionToken("#", "strStart"));
-            _inputTokens.Add(new RPNExpressionToken("#", "strEnd"));          
+            _inputTokens.Add(new RPNExpressionToken("#", "strEnd"));
 
-            Dictionary<string, string> SemantProg = new Dictionary<string, string>();
-            SemantProg.Add("<E>+<T1>", "+");
-            SemantProg.Add("<E>-<T1>", "-");            
-            SemantProg.Add("<T>*<F>", "*");
-            SemantProg.Add("<T>/<F>", "/");
-            SemantProg.Add("<M>^<F>", "^");
-            SemantProg.Add("IDN", "Next");
-            SemantProg.Add("CON", "Next");
+            Dictionary<string, string> SemantProg = new Dictionary<string, string>
+            {
+                { "<E>+<T1>", "+" },
+                { "<E>-<T1>", "-" },
+                { "<T>*<F>", "*" },
+                { "<T>/<F>", "/" },
+                { "<M>^<F>", "^" },
+                { "IDN", "Next" },
+                { "CON", "Next" }
+            };
             bool ind = false;
             _resultTable = new List<RPNExpressionTable>();
 

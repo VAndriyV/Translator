@@ -13,5 +13,10 @@ namespace Domain.Translator
         List<string> GetRPN();
 
         RPNBuilderTable GetResultTable();
+
+        List<string> GetUsedMarks();
+
+        List<string> GetAdditionalCells(); 
+
     }
 }
