@@ -48,6 +48,8 @@ namespace ReactTranslator.Controllers
 
         private readonly IExecutor _executor;
 
+        private readonly IHashManager _hashManager;
+
         private const string FULL_GRAMMAR_TEXT_FILE = "GrammarConfiguration.txt";
 
         private const string EXPRESSION_FULL_GRAMMAR_TEXT_FILE = "ExpressionGrammar.txt";
@@ -63,7 +65,7 @@ namespace ReactTranslator.Controllers
             , IAscendingAnalyzer ascendingAnalyzer
             ,IRPNExpressionBuilder RPNExpressionBuilder
             ,IRPNExpressionCalculator RNPExpressionCalculator
-            ,IRPNBuilder RPNBuilder, IExecutor executor)
+            ,IRPNBuilder RPNBuilder, IExecutor executor, IHashManager hashManager)
         {
             _lexicalAnalyzer = lexicalAnalyzer;
             _recursiveAnalyzer = recursiveAnalyzer;
@@ -77,6 +79,7 @@ namespace ReactTranslator.Controllers
             _RPNExpressionCalculator = RNPExpressionCalculator;
             _RPNBuilder = RPNBuilder;
             _executor = executor;
+            _hashManager = hashManager;
         }       
 
         [HttpGet("Index")]
@@ -424,11 +427,6 @@ namespace ReactTranslator.Controllers
                 }
                 catch(VariablesInitializeException ex)
                 {
-                   /* HttpContext.Response.Cookies.Append("marks", JsonConvert.SerializeObject(mappedMarks));
-                    HttpContext.Response.Cookies.Append("RPN", JsonConvert.SerializeObject(RPN));
-                    HttpContext.Response.Cookies.Append("outputIdns", JsonConvert.SerializeObject(outputIdns));
-                    HttpContext.Response.Cookies.Append("additionalCells"
-                        , JsonConvert.SerializeObject(mappedAdditionalCells));*/
                     HttpContext.Response.Cookies.Append("idx", _executor.GetLastIdx().ToString());                  
                     return new ObjectResult(ex.Variables);
                 }
@@ -463,7 +461,16 @@ namespace ReactTranslator.Controllers
                 };
 
                 return StatusCode(400, exInfo);
-            }            
+            }   
+            catch(DivideByZeroException divEx)
+            {
+                var exInfo = new ErrorDetails
+                {
+                    Message = "Runtime error: ",
+                    AnalyzeErrors = "DivideByZeroException"
+                };
+                return StatusCode(400, exInfo);
+            }
         }
 
         [HttpPost("ContinueExecution")]
@@ -481,6 +488,15 @@ namespace ReactTranslator.Controllers
                 HttpContext.Response.Cookies.Append("idx", _executor.GetLastIdx().ToString());
                 return new ObjectResult(ex.Variables);
             }
+            catch (DivideByZeroException divEx)
+            {
+                var exInfo = new ErrorDetails
+                {
+                    Message = "Runtime error: ",
+                    AnalyzeErrors = "DivideByZeroException"
+                };
+                return StatusCode(400, exInfo);
+            }
 
             var result = new ExecutorResult
             {
@@ -490,6 +506,13 @@ namespace ReactTranslator.Controllers
 
             return new ObjectResult(result);
         }
+
+        [HttpGet("PerformHashing/{tableSize}")]
+        public async Task<IActionResult> HashProcessing(int tableSize)
+        {
+            await _hashManager.PerformHashing(tableSize);
+            return new ObjectResult(_hashManager.GetResultTable());
+        } 
 
         [HttpGet("FullGrammar")]
         public async Task<IActionResult> FullGrammar()

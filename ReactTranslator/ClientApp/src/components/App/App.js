@@ -11,31 +11,12 @@ import GrammarAndRelations from '../GrammarAndRelations/GrammarAndRelations';
 import PRNExpressionPage from '../PRNExpressionPage/PRNExpressionPage';
 import RPNBuilderPage from '../RPNBuilderPage/RPNBuilderPage';
 import ExecutorPage from '../ExecutorPage/ExecutorPage';
+import Hashing from '../Hashing/Hashing';
 
 export default class App extends Component {
     displayName = App.name;
 
-    translatorService = new TranslatorService();
-
-    doLexicalAnalyze = (sourceCode) => {
-        var result = this.translatorService.getLexicalAnalyzeResult(sourceCode);
-        result.then((r) => console.log(r)).catch((c) => console.log(c));
-    }
-
-    doAutomaticAnalyze = (sourceCode) => {
-        var result = this.translatorService.getAutomaticAnalyzeResult(sourceCode);
-        result.then((r) => console.log(JSON.stringify(r))).catch((c) => console.log(c));
-    }
-
-    doRecursiveAnalyze = (sourceCode) => {
-        var result = this.translatorService.getRecursiveAnalyzeResult(sourceCode);
-        result.then((r) => console.log(r)).catch((c) => console.log(c));
-    }
-
-    setRelations = (grammarText) => {
-        var result = this.translatorService.getRelationTable(grammarText);
-        result.then((r) => console.log(JSON.stringify(r))).catch((c) => console.log(c));
-    }   
+    translatorService = new TranslatorService();    
     
     render() {
         return (
@@ -49,6 +30,7 @@ export default class App extends Component {
                 <Route path="/rpnExpression" component={PRNExpressionPage} />
                 <Route path="/rpnBuilder" component={RPNBuilderPage} />
                 <Route path="/executeProgram" component={ExecutorPage} />
+                <Route path="/performHashing" component={Hashing} />
             </Layout>
         );
     }

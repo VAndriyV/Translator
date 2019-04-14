@@ -330,7 +330,7 @@ namespace TranslatorLogic.Executor
 
         private long Divide()
         {
-            ExtractValuesForBinaryOperation(out long val1, out long val2);
+            ExtractValuesForBinaryOperation(out long val1, out long val2);          
             return val2 / val1;
         }
 

@@ -59,6 +59,11 @@ export class NavMenu extends Component {
                                 <Glyphicon glyph="cd" /> Execute program
               </NavItem>
                         </LinkContainer>
+                        <LinkContainer to={"/performHashing"} exact>
+                            <NavItem>
+                                <Glyphicon glyph="barcode" /> Hashing
+              </NavItem>
+                        </LinkContainer>
                     </Nav>
                 </Navbar.Collapse>
             </Navbar>

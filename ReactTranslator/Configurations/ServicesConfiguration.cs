@@ -11,6 +11,7 @@ using Domain.Util.Interfaces;
 using Domain.Util;
 using TranslatorLogic.ReversePolishNotation;
 using TranslatorLogic.Executor;
+using TranslatorLogic.Hash;
 
 namespace ReactTranslator.Configurations
 {
@@ -48,7 +49,8 @@ namespace ReactTranslator.Configurations
                 .AddSingleton<IRPNExpressionBuilder, RPNExpressionBuilder>()
                 .AddTransient<IRPNExpressionCalculator, RPNExpressionCalculator>()
                 .AddTransient<IRPNBuilder, RPNBuilder>()
-                .AddSingleton<IExecutor,Executor>();
+                .AddSingleton<IExecutor,Executor>()
+                .AddTransient<IHashManager,HashManager>();
                
 
             return services;

@@ -106,4 +106,10 @@
         return result;
     };
 
+    performHashing = async (tableSize) => {
+        const result = await this.getResourceGET("/PerformHashing/" + tableSize);
+
+        return result;
+    };
+
 }
